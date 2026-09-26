@@ -1,0 +1,93 @@
+### AutoIntel API — requisições de exemplo (IntelliJ HTTP Client / VS Code REST Client)
+### Execute na ordem: os tokens são guardados automaticamente nas variáveis {{tokenAnalista}} e {{tokenAdmin}}.
+
+@base = http://localhost:8080/api/v1
+
+### 1. Login como ANALISTA (público)
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{ "email": "analista@autointel.com", "senha": "Analista@123" }
+
+> {% client.global.set("tokenAnalista", response.body.token); %}
+
+### 2. Login como ADMIN (público)
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{ "email": "admin@autointel.com", "senha": "Admin@123" }
+
+> {% client.global.set("tokenAdmin", response.body.token); %}
+
+### 3. Validação do desafio — Ford Ranger Raptor (lista livre de atributos)
+POST {{base}}/consultas
+Authorization: Bearer {{tokenAnalista}}
+Content-Type: application/json
+
+{
+  "marca": "Ford",
+  "modelo": "Ranger",
+  "versao": "Raptor",
+  "atributos": [
+    "Preço", "Motor", "Potência", "Torque", "Câmbio", "Tração", "Modos de condução",
+    "Suspensão dianteira", "Amortecedores FOX", "Pneus", "Rodas", "Comprimento", "Entre-eixos",
+    "Vão livre do solo", "Ângulo de ataque", "Capacidade de imersão", "Airbags",
+    "Central multimídia", "Som", "Faróis", "Teto solar", "Cafeteira"
+  ]
+}
+
+> {% client.global.set("consultaId", response.body.id); %}
+
+### 4. Resultado da consulta em JSON
+GET {{base}}/consultas/{{consultaId}}
+Authorization: Bearer {{tokenAnalista}}
+
+### 5. Mesmo resultado em CSV (negociação de conteúdo)
+GET {{base}}/consultas/{{consultaId}}
+Authorization: Bearer {{tokenAnalista}}
+Accept: text/csv
+
+### 6. Histórico paginado
+GET {{base}}/consultas?page=0&size=10
+Authorization: Bearer {{tokenAnalista}}
+
+### 7. Catálogo de atributos (público)
+GET {{base}}/atributos?categoria=MOTOR
+
+### 8. ANALISTA tentando cadastrar veículo → 403
+POST {{base}}/veiculos
+Authorization: Bearer {{tokenAnalista}}
+Content-Type: application/json
+
+{ "marca": "Chevrolet", "modelo": "S10", "versao": "ZR2", "anoModelo": 2025 }
+
+### 9. ADMIN cadastra veículo → 201
+POST {{base}}/veiculos
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "marca": "Chevrolet", "modelo": "S10", "versao": "ZR2", "anoModelo": 2025 }
+
+> {% client.global.set("veiculoId", response.body.id); %}
+
+### 10. ADMIN define especificação (PUT idempotente: 201 na 1ª vez, 200 depois)
+PUT {{base}}/veiculos/{{veiculoId}}/especificacoes/POTENCIA
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "valor": "200", "fonte": "Site oficial Chevrolet" }
+
+### 11. Especificações do veículo
+GET {{base}}/veiculos/{{veiculoId}}/especificacoes
+Authorization: Bearer {{tokenAnalista}}
+
+### 12. Sem token → 401
+GET {{base}}/veiculos
+
+### 13. Token inválido → 401
+GET {{base}}/veiculos
+Authorization: Bearer token.invalido.aqui
+
+### 14. Dados do token
+GET {{base}}/auth/me
+Authorization: Bearer {{tokenAdmin}}
