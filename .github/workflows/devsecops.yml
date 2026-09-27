@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: aquasecurity/trivy-action@0.33.1
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -93,7 +93,7 @@ jobs:
         run: ./mvnw --batch-mode -DskipTests package
       - name: Construir imagem
         run: docker build -t autointel:ci .
-      - uses: aquasecurity/trivy-action@0.33.1
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: autointel:ci
           scanners: vuln,misconfig,secret
