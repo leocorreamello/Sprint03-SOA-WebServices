@@ -285,7 +285,7 @@ python3 scripts/gerar-evidencias.py   # (opcional) atualiza docs/evidencias/RESU
 | `ReconhecedorAtributosTest` | Unitário | Sinônimos, acentos, erros de digitação, termos desconhecidos, catálogo sem ambiguidades |
 | `NormalizadorTextoTest` | Unitário | Normalização e similaridade de textos |
 
-**Evidências da execução:** a suíte atual contém **84 testes, 0 falhas** (inclui rate limit, proteção contra spray de contas, acesso ADMIN ao Actuator e exposição Prometheus restrita ao perfil local `monitor`). [docs/evidencias/RESULTADO_TESTES.md](docs/evidencias/RESULTADO_TESTES.md) contém o registro anterior de 80 testes; após o `verify`, os relatórios atualizados ficam em `target/reports/surefire.html` e `target/site/jacoco/index.html`.
+**Evidências da execução:** a suíte atual contém **84 testes, 0 falhas** (inclui rate limit, proteção contra spray de contas, acesso ADMIN ao Actuator e exposição Prometheus restrita ao perfil local `monitor`). O resumo e os cenários executados estão em [docs/evidencias/RESULTADO_TESTES.md](docs/evidencias/RESULTADO_TESTES.md); após o `verify`, os relatórios HTML ficam em `target/reports/surefire.html` e `target/site/jacoco/index.html`.
 
 ### Monitoramento da Sprint 3
 
@@ -318,6 +318,6 @@ requests.http        Coleção de requisições prontas
 | Arquitetura da Solução (20%) | [docs/ARQUITETURA.md](docs/ARQUITETURA.md): diagramas de componentes, responsabilidades por camada, fluxos de comunicação e de autenticação |
 | Maturidade REST Nível 2 (20%) | Recursos por substantivo, verbos GET/POST/PUT/PATCH/DELETE, status 200/201/204/400/401/403/404/405/409/415, `Location`, PUT idempotente, negociação JSON/CSV ([seção 6 da arquitetura](docs/ARQUITETURA.md#6-maturidade-rest--nível-2-richardson)) |
 | Autenticação e Autorização (20%) | `SecurityConfig` + `@PreAuthorize`; endpoints públicos e protegidos; perfis ADMIN/ANALISTA; controle por dono da consulta |
-| Testes Automatizados (15%) | 80 testes (sucesso, erro e acesso não autorizado) · [evidências](docs/evidencias/RESULTADO_TESTES.md) |
+| Testes Automatizados (15%) | 84 testes (sucesso, erro e acesso não autorizado) · [evidências](docs/evidencias/RESULTADO_TESTES.md) |
 | JWT (15%) | `JwtService` (geração/validação HS256, emissor, expiração), `JwtAuthenticationFilter`, claims usadas na autorização e no `/auth/me` |
 | Documentação e Erros (10%) | Swagger/OpenAPI em `/swagger-ui.html`, Problem Details padronizado, este README |

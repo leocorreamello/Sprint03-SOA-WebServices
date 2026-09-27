@@ -37,11 +37,12 @@ if csv_jacoco.exists():
         cobertura[rotulo] = f"{100 * c / (m + c):.1f}% ({c}/{m + c})"
 
 java = subprocess.run(["java", "-version"], capture_output=True, text=True).stderr.splitlines()[0]
+comando = ".\\mvnw.cmd -q verify" if platform.system() == "Windows" else "./mvnw verify"
 out = [
     "# Evidência de execução dos testes automatizados", "",
     f"- **Data da execução:** {datetime.now():%d/%m/%Y %H:%M}",
     f"- **Ambiente:** {platform.system()} {platform.release()} · {java}",
-    "- **Comando:** `./mvnw verify`", "",
+    f"- **Comando:** `{comando}`", "",
     "## Resumo", "",
     "| Total | Sucesso | Falhas | Ignorados |", "|---:|---:|---:|---:|",
     f"| {total} | {total - falhas - pulados} | {falhas} | {pulados} |", "",
