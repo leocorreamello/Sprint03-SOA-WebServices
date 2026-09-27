@@ -12,6 +12,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -22,6 +24,7 @@ import java.util.List;
  * devolva um 401 explicativo (ex.: "Token expirado").
  */
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     public static final String ATRIBUTO_ERRO_JWT = "autointel.jwt.erro";
     private static final String PREFIXO = "Bearer ";
@@ -45,8 +48,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 autenticacao.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(autenticacao);
             } catch (ExpiredJwtException e) {
+                log.warn("security_event=JWT_EXPIRED");
                 request.setAttribute(ATRIBUTO_ERRO_JWT, "Token expirado. Faça login novamente para obter um novo token.");
             } catch (JwtException | IllegalArgumentException e) {
+                log.warn("security_event=JWT_INVALID");
                 request.setAttribute(ATRIBUTO_ERRO_JWT, "Token inválido: assinatura, formato ou emissor não reconhecidos.");
             }
         }

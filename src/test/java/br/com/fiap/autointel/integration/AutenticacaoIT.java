@@ -38,6 +38,21 @@ class AutenticacaoIT extends ApiTestSupport {
     }
 
     @Test
+    @DisplayName("POST /auth/login bloqueia a sexta falha da mesma origem e conta → 429")
+    void limitaTentativasDeLogin() throws Exception {
+        String email = unico("inexistente") + "@teste.com";
+        String body = "{\"email\":\"" + email + "\",\"senha\":\"incorreta\"}";
+        for (int i = 0; i < 5; i++) {
+            mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isUnauthorized());
+        }
+        mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string("Retry-After", "900"))
+                .andExpect(jsonPath("$.codigo").value("LIMITE_LOGIN"));
+    }
+
+    @Test
     @DisplayName("POST /auth/login com usuário inexistente → 401 (sem revelar se o e-mail existe)")
     void loginUsuarioInexistente() throws Exception {
         mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)

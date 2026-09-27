@@ -1,0 +1,102 @@
+name: DevSecOps
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 12 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build e testes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Testes e cobertura
+        run: ./mvnw --batch-mode verify
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: resultados-testes
+          path: |
+            target/surefire-reports/*.xml
+            target/site/jacoco/**
+          if-no-files-found: warn
+
+  sast:
+    name: SAST - Semgrep
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar Semgrep
+        run: python -m pip install --user semgrep
+      - name: Análise estática
+        run: ~/.local/bin/semgrep scan --config p/java --config p/security-audit --error --metrics=off src/main/java
+
+  secrets:
+    name: Segredos - Gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  sca:
+    name: SCA - Trivy filesystem
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+
+  dependency-review:
+    name: Revisão de dependências do PR
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  container:
+    name: Imagem e Trivy
+    needs: [test, sast, secrets, sca]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Empacotar
+        run: ./mvnw --batch-mode -DskipTests package
+      - name: Construir imagem
+        run: docker build -t autointel:ci .
+      - uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: autointel:ci
+          scanners: vuln,misconfig,secret
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'

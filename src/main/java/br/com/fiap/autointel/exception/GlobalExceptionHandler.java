@@ -1,6 +1,7 @@
 package br.com.fiap.autointel.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import br.com.fiap.autointel.security.MuitasTentativasException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +49,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private static final String BASE_TYPE = "https://autointel.fiap.com.br/erros/";
 
     public record ErroCampo(String campo, String mensagem) {
+    }
+
+    @ExceptionHandler(MuitasTentativasException.class)
+    public ResponseEntity<ProblemDetail> muitasTentativas(MuitasTentativasException ex, HttpServletRequest req) {
+        ResponseEntity<ProblemDetail> base = problema(HttpStatus.TOO_MANY_REQUESTS, "Muitas tentativas", "LIMITE_LOGIN",
+                "Muitas tentativas de login. Tente novamente em 15 minutos.", req);
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, "900")
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .body(base.getBody());
     }
 
     @ExceptionHandler(RecursoNaoEncontradoException.class)
