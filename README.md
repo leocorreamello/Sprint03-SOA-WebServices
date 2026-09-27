@@ -109,7 +109,7 @@ JWT_SECRET="$(openssl rand -base64 32)" java -jar target/autointel-1.0.0.jar
 | `JWT_EXPIRACAO` | `1h` | Validade do token (ex.: `30m`, `2h`) |
 | `BOOTSTRAP_ADMIN_EMAIL` e `BOOTSTRAP_ADMIN_PASSWORD` | vazios | Opcionais; criam o primeiro ADMIN se ainda não existir. Informar ambos e senha com pelo menos 12 caracteres. |
 
-O perfil padrão desativa o console H2 e as contas de demonstração. O banco H2 continua em memória: seus dados são perdidos ao reiniciar. Para persistência, backup e recuperação reais, migrar para um banco persistente. O limitador de login mantém estado em memória por instância (5 falhas por endereço remoto e conta em 15 minutos); em produção com múltiplas réplicas, substituir por armazenamento compartilhado ou limite no gateway. Atrás de proxy, configurar o endereço remoto confiável antes de usar este controle como proteção principal.
+O perfil padrão desativa o console H2 e as contas de demonstração. O banco H2 continua em memória: seus dados são perdidos ao reiniciar. Para persistência, backup e recuperação reais, migrar para um banco persistente. O limitador de login mantém estado em memória por instância (5 falhas por endereço remoto e conta, ou 30 falhas totais por endereço, em 15 minutos); em produção com múltiplas réplicas, substituir por armazenamento compartilhado ou limite no gateway. Atrás de proxy, configurar o endereço remoto confiável antes de usar este controle como proteção principal.
 
 O pipeline de segurança está em [`.github/workflows/devsecops.yml`](.github/workflows/devsecops.yml); o `Dockerfile` executa com UID sem privilégios. Logs do console usam JSON/ECS. O endpoint `/actuator/metrics` exige perfil ADMIN.
 
@@ -256,7 +256,7 @@ Todos os erros, inclusive 401/403 do Spring Security e 404/405/415 do Spring MVC
 |---|---|---|
 | `VALIDACAO` / `JSON_INVALIDO` / `PARAMETRO_INVALIDO` | 400 | Campos inválidos, JSON malformado, parâmetro com tipo errado |
 | `NAO_AUTENTICADO` | 401 | Token ausente, inválido, expirado ou login inválido |
-| `LIMITE_LOGIN` | 429 | Sexta falha de login da mesma origem e conta em 15 minutos |
+| `LIMITE_LOGIN` | 429 | Sexta falha da mesma origem/conta ou 31ª falha total da origem em 15 minutos |
 | `ACESSO_NEGADO` | 403 | Perfil sem permissão ou consulta de outro usuário |
 | `RECURSO_NAO_ENCONTRADO` | 404 | Recurso ou rota inexistente |
 | `METODO_NAO_SUPORTADO` | 405 | Método HTTP não suportado no recurso |
@@ -267,7 +267,7 @@ Todos os erros, inclusive 401/403 do Spring Security e 404/405/415 do Spring MVC
 ## 10. Testes automatizados
 
 ```bash
-./mvnw test      # executa os 82 testes (unitários + integração da API)
+./mvnw test      # executa os 83 testes (unitários + integração da API)
 ./mvnw verify    # testes + relatório de cobertura JaCoCo + relatório HTML dos testes
 python3 scripts/gerar-evidencias.py   # (opcional) atualiza docs/evidencias/RESULTADO_TESTES.md
 ```
@@ -285,7 +285,7 @@ python3 scripts/gerar-evidencias.py   # (opcional) atualiza docs/evidencias/RESU
 | `ReconhecedorAtributosTest` | Unitário | Sinônimos, acentos, erros de digitação, termos desconhecidos, catálogo sem ambiguidades |
 | `NormalizadorTextoTest` | Unitário | Normalização e similaridade de textos |
 
-**Evidências da execução:** a suíte atual contém **82 testes, 0 falhas** (inclui rate limit e acesso ADMIN ao Actuator). [docs/evidencias/RESULTADO_TESTES.md](docs/evidencias/RESULTADO_TESTES.md) contém o registro anterior de 80 testes; após o `verify`, os relatórios atualizados ficam em `target/reports/surefire.html` e `target/site/jacoco/index.html`.
+**Evidências da execução:** a suíte atual contém **83 testes, 0 falhas** (inclui rate limit, proteção contra spray de contas e acesso ADMIN ao Actuator). [docs/evidencias/RESULTADO_TESTES.md](docs/evidencias/RESULTADO_TESTES.md) contém o registro anterior de 80 testes; após o `verify`, os relatórios atualizados ficam em `target/reports/surefire.html` e `target/site/jacoco/index.html`.
 
 ## 11. Arquitetura e estrutura do projeto
 

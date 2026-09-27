@@ -38,7 +38,7 @@ class AutenticacaoIT extends ApiTestSupport {
     }
 
     @Test
-    @DisplayName("POST /auth/login bloqueia a sexta falha da mesma origem e conta → 429")
+    @DisplayName("POST /auth/login bloqueia a sexta falha da mesma origem → 429")
     void limitaTentativasDeLogin() throws Exception {
         String email = unico("inexistente") + "@teste.com";
         String body = "{\"email\":\"" + email + "\",\"senha\":\"incorreta\"}";

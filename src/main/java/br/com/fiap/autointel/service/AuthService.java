@@ -43,9 +43,9 @@ public class AuthService {
             log.warn("security_event=LOGIN_FAILURE");
             throw ex;
         }
-        loginThrottle.succeeded(remoteAddress, request.email());
         Usuario usuario = usuarios.findByEmailIgnoreCase(request.email())
                 .orElseThrow(() -> new BadCredentialsException("Credenciais inválidas"));
+        loginThrottle.succeeded(remoteAddress, request.email());
         log.info("security_event=LOGIN_SUCCESS user_id={}", usuario.getId());
         return emitirToken(usuario);
     }
