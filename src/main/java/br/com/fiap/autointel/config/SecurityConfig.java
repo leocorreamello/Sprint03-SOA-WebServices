@@ -55,6 +55,7 @@ public class SecurityConfig {
                 .headers(h -> h.frameOptions(f -> f.sameOrigin())) // necessário para o console do H2
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(ROTAS_PUBLICAS).permitAll()
+                        .requestMatchers("/actuator/metrics", "/actuator/metrics/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/usuarios").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/atributos/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/veiculos/**").hasAnyRole("ADMIN", "ANALISTA")

@@ -46,6 +46,17 @@ class SegurancaIT extends ApiTestSupport {
         mvc.perform(get("/actuator/health")).andExpect(status().isOk());
     }
 
+    @Test
+    @DisplayName("Métricas exigem ADMIN; ANALISTA recebe 403")
+    void metricasSomenteAdmin() throws Exception {
+        mvc.perform(get("/actuator/metrics"))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(autenticado(get("/actuator/metrics"), tokenAnalista()))
+                .andExpect(status().isForbidden());
+        mvc.perform(autenticado(get("/actuator/metrics"), tokenAdmin()))
+                .andExpect(status().isOk());
+    }
+
     // ---------- Autenticação (401) ----------
 
     @Test
