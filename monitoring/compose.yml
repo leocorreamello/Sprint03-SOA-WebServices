@@ -1,0 +1,53 @@
+name: autointel-monitoring
+
+services:
+  api:
+    build:
+      context: ..
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Execute iniciar-grafana.ps1 para gerar a chave local}
+      SPRING_PROFILES_ACTIVE: monitor,dev
+    ports:
+      - 127.0.0.1:18080:8080
+    networks:
+      - internal
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.13.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=24h
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - 127.0.0.1:19090:9090
+    depends_on:
+      - api
+    networks:
+      - internal
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:12.3.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Execute iniciar-grafana.ps1 para gerar a senha local}
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/autointel.json
+    volumes:
+      - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/prometheus.yml:ro
+      - ./grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/autointel.yml:ro
+      - ./grafana/autointel.json:/var/lib/grafana/dashboards/autointel.json:ro
+    ports:
+      - 127.0.0.1:13000:3000
+    depends_on:
+      - prometheus
+    networks:
+      - internal
+    restart: unless-stopped
+
+networks:
+  internal:
+    driver: bridge

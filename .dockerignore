@@ -1,6 +1,7 @@
 .git
 .github
 docs
+monitoring
 src
 *.md
 *.http

@@ -267,7 +267,7 @@ Todos os erros, inclusive 401/403 do Spring Security e 404/405/415 do Spring MVC
 ## 10. Testes automatizados
 
 ```bash
-./mvnw test      # executa os 83 testes (unitários + integração da API)
+./mvnw test      # executa os 84 testes (unitários + integração da API)
 ./mvnw verify    # testes + relatório de cobertura JaCoCo + relatório HTML dos testes
 python3 scripts/gerar-evidencias.py   # (opcional) atualiza docs/evidencias/RESULTADO_TESTES.md
 ```
@@ -285,7 +285,11 @@ python3 scripts/gerar-evidencias.py   # (opcional) atualiza docs/evidencias/RESU
 | `ReconhecedorAtributosTest` | Unitário | Sinônimos, acentos, erros de digitação, termos desconhecidos, catálogo sem ambiguidades |
 | `NormalizadorTextoTest` | Unitário | Normalização e similaridade de textos |
 
-**Evidências da execução:** a suíte atual contém **83 testes, 0 falhas** (inclui rate limit, proteção contra spray de contas e acesso ADMIN ao Actuator). [docs/evidencias/RESULTADO_TESTES.md](docs/evidencias/RESULTADO_TESTES.md) contém o registro anterior de 80 testes; após o `verify`, os relatórios atualizados ficam em `target/reports/surefire.html` e `target/site/jacoco/index.html`.
+**Evidências da execução:** a suíte atual contém **84 testes, 0 falhas** (inclui rate limit, proteção contra spray de contas, acesso ADMIN ao Actuator e exposição Prometheus restrita ao perfil local `monitor`). [docs/evidencias/RESULTADO_TESTES.md](docs/evidencias/RESULTADO_TESTES.md) contém o registro anterior de 80 testes; após o `verify`, os relatórios atualizados ficam em `target/reports/surefire.html` e `target/site/jacoco/index.html`.
+
+### Monitoramento da Sprint 3
+
+O diretório [monitoring](monitoring/README.md) contém uma stack local reproduzível com a API, Prometheus e Grafana. O perfil `monitor` habilita `/actuator/prometheus`; fora dele, o endpoint permanece indisponível. O dashboard provisionado mostra disponibilidade, tráfego HTTP, respostas 401/403/429/5xx e latência p95. A stack publica portas somente em `127.0.0.1` e não representa um deploy de produção.
 
 ## 11. Arquitetura e estrutura do projeto
 
