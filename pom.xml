@@ -18,6 +18,8 @@
 
     <properties>
         <java.version>21</java.version>
+        <!-- Corrige CVEs do Tomcat 11.0.24 até atualização do BOM Spring Boot. -->
+        <tomcat.version>11.0.25</tomcat.version>
         <jjwt.version>0.13.0</jjwt.version>
         <springdoc.version>3.0.3</springdoc.version>
         <jacoco.version>0.8.15</jacoco.version>
