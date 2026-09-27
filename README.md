@@ -270,7 +270,7 @@ python3 scripts/gerar-evidencias.py   # (opcional) atualiza docs/evidencias/RESU
 | `SegurancaIT` | Integração | Endpoints públicos, sem token, token expirado, token adulterado, 403 por perfil, promoção de perfil |
 | `AutenticacaoIT` | Integração | Login (200/401/400), cadastro (201/409/400), `/auth/me` |
 | `VeiculoEspecificacaoIT` | Integração | CRUD de veículos e especificações (201/200/204/404/409/403), PUT idempotente |
-| `AtributoIT` | Integração | Catálogo público, CRUD do ADMIN, 409 atributo em uso |
+| `AtributoIT` | Integração | Catálogo público, CRUD do ADMIN, 409 atributo  em uso |
 | `TratamentoErrosIT` | Integração | Formato padrão de erro, 400/404/405/415 |
 | `JwtServiceTest` | Unitário | Geração, claims, expiração, adulteração, outra chave, outro emissor |
 | `ReconhecedorAtributosTest` | Unitário | Sinônimos, acentos, erros de digitação, termos desconhecidos, catálogo sem ambiguidades |
