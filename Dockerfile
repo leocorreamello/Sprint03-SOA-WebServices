@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:24-jre-alpine
 
 WORKDIR /app
 COPY --chown=10001:10001 target/autointel-1.0.0.jar app.jar
