@@ -10,6 +10,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +44,12 @@ public class DataSeeder implements ApplicationRunner {
     private final VeiculoRepository veiculos;
     private final PasswordEncoder passwordEncoder;
     private final JsonMapper jsonMapper;
+    @Value("${app.demo-users.enabled:false}")
+    private boolean demoUsersEnabled;
+    @Value("${app.bootstrap-admin.email:}")
+    private String bootstrapAdminEmail;
+    @Value("${app.bootstrap-admin.password:}")
+    private String bootstrapAdminPassword;
 
     public DataSeeder(UsuarioRepository usuarios, AtributoRepository atributos, VeiculoRepository veiculos,
                       PasswordEncoder passwordEncoder, JsonMapper jsonMapper) {
@@ -56,8 +63,16 @@ public class DataSeeder implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) throws IOException {
-        criarUsuario("Administrador", "admin@autointel.com", "Admin@123", Perfil.ADMIN);
-        criarUsuario("Analista de Mercado", "analista@autointel.com", "Analista@123", Perfil.ANALISTA);
+        if (demoUsersEnabled) {
+            criarUsuario("Administrador", "admin@autointel.com", "Admin@123", Perfil.ADMIN);
+            criarUsuario("Analista de Mercado", "analista@autointel.com", "Analista@123", Perfil.ANALISTA);
+        }
+        if (!bootstrapAdminEmail.isBlank() || !bootstrapAdminPassword.isBlank()) {
+            if (bootstrapAdminEmail.isBlank() || bootstrapAdminPassword.length() < 12) {
+                throw new IllegalStateException("BOOTSTRAP_ADMIN_EMAIL e BOOTSTRAP_ADMIN_PASSWORD (mínimo 12 caracteres) são obrigatórios juntos");
+            }
+            criarUsuario("Administrador", bootstrapAdminEmail, bootstrapAdminPassword, Perfil.ADMIN);
+        }
 
         if (atributos.count() == 0) {
             List<AtributoSeed> seeds = ler("seed/atributos.json", new TypeReference<>() {

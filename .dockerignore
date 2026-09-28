@@ -1,0 +1,9 @@
+.git
+.github
+docs
+monitoring
+src
+*.md
+*.http
+target/*
+!target/autointel-1.0.0.jar

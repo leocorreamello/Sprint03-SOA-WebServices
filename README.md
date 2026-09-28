@@ -64,17 +64,19 @@
 
 ```bash
 # macOS / Linux
-./mvnw spring-boot:run
+JWT_SECRET="$(openssl rand -base64 32)" ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 
 # Windows
-mvnw.cmd spring-boot:run
+$env:JWT_SECRET=[Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+$env:SPRING_PROFILES_ACTIVE='dev'
+.\mvnw.cmd spring-boot:run
 ```
 
 Outra opção é gerar o JAR e executá-lo:
 
 ```bash
 ./mvnw clean package
-java -jar target/autointel-1.0.0.jar
+JWT_SECRET="$(openssl rand -base64 32)" java -jar target/autointel-1.0.0.jar
 ```
 
 ### Pelo IntelliJ IDEA
@@ -89,21 +91,27 @@ java -jar target/autointel-1.0.0.jar
 | **Swagger UI** (documentação interativa) | http://localhost:8080/swagger-ui.html |
 | OpenAPI (JSON) | http://localhost:8080/v3/api-docs |
 | Health check | http://localhost:8080/actuator/health |
-| Console H2 | http://localhost:8080/h2-console (JDBC URL `jdbc:h2:mem:autointel`, usuário `sa`, sem senha) |
+| Console H2 | http://localhost:8080/h2-console (somente no perfil `dev`) |
+| Métricas HTTP | http://localhost:8080/actuator/metrics (exige JWT ADMIN) |
 
-### Usuários de demonstração (criados automaticamente)
+### Usuários de demonstração (somente no perfil `dev` ou nos testes)
 
 | Perfil | E-mail | Senha |
 |---|---|---|
 | ADMIN | `admin@autointel.com` | `Admin@123` |
 | ANALISTA | `analista@autointel.com` | `Analista@123` |
 
-### Configuração (variáveis de ambiente opcionais)
+### Configuração de segurança
 
 | Variável | Padrão | Descrição |
 |---|---|---|
-| `JWT_SECRET` | chave de desenvolvimento | Chave HMAC em Base64 (mínimo 256 bits). **Troque em produção.** |
+| `JWT_SECRET` | sem padrão | Obrigatória; chave HMAC em Base64 com mínimo de 256 bits. Gerar valor diferente por ambiente. |
 | `JWT_EXPIRACAO` | `1h` | Validade do token (ex.: `30m`, `2h`) |
+| `BOOTSTRAP_ADMIN_EMAIL` e `BOOTSTRAP_ADMIN_PASSWORD` | vazios | Opcionais; criam o primeiro ADMIN se ainda não existir. Informar ambos e senha com pelo menos 12 caracteres. |
+
+O perfil padrão desativa o console H2 e as contas de demonstração. O banco H2 continua em memória: seus dados são perdidos ao reiniciar. Para persistência, backup e recuperação reais, migrar para um banco persistente. O limitador de login mantém estado em memória por instância (5 falhas por endereço remoto e conta, ou 30 falhas totais por endereço, em 15 minutos); em produção com múltiplas réplicas, substituir por armazenamento compartilhado ou limite no gateway. Atrás de proxy, configurar o endereço remoto confiável antes de usar este controle como proteção principal.
+
+O pipeline de segurança está em [`.github/workflows/devsecops.yml`](.github/workflows/devsecops.yml); o `Dockerfile` executa com UID sem privilégios. Logs do console usam JSON/ECS. O endpoint `/actuator/metrics` exige perfil ADMIN.
 
 ## 4. Usando a API (passo a passo)
 
@@ -248,6 +256,7 @@ Todos os erros, inclusive 401/403 do Spring Security e 404/405/415 do Spring MVC
 |---|---|---|
 | `VALIDACAO` / `JSON_INVALIDO` / `PARAMETRO_INVALIDO` | 400 | Campos inválidos, JSON malformado, parâmetro com tipo errado |
 | `NAO_AUTENTICADO` | 401 | Token ausente, inválido, expirado ou login inválido |
+| `LIMITE_LOGIN` | 429 | Sexta falha da mesma origem/conta ou 31ª falha total da origem em 15 minutos |
 | `ACESSO_NEGADO` | 403 | Perfil sem permissão ou consulta de outro usuário |
 | `RECURSO_NAO_ENCONTRADO` | 404 | Recurso ou rota inexistente |
 | `METODO_NAO_SUPORTADO` | 405 | Método HTTP não suportado no recurso |
@@ -258,7 +267,7 @@ Todos os erros, inclusive 401/403 do Spring Security e 404/405/415 do Spring MVC
 ## 10. Testes automatizados
 
 ```bash
-./mvnw test      # executa os 80 testes (unitários + integração da API)
+./mvnw test      # executa os 84 testes (unitários + integração da API)
 ./mvnw verify    # testes + relatório de cobertura JaCoCo + relatório HTML dos testes
 python3 scripts/gerar-evidencias.py   # (opcional) atualiza docs/evidencias/RESULTADO_TESTES.md
 ```
@@ -276,7 +285,11 @@ python3 scripts/gerar-evidencias.py   # (opcional) atualiza docs/evidencias/RESU
 | `ReconhecedorAtributosTest` | Unitário | Sinônimos, acentos, erros de digitação, termos desconhecidos, catálogo sem ambiguidades |
 | `NormalizadorTextoTest` | Unitário | Normalização e similaridade de textos |
 
-**Evidências da execução:** [docs/evidencias/RESULTADO_TESTES.md](docs/evidencias/RESULTADO_TESTES.md) lista cada cenário com resultado e tempo: **80 testes, 0 falhas**, cobertura de **95% das instruções / 84% dos branches**. Após o `verify`, os relatórios HTML ficam em `target/reports/surefire.html` e `target/site/jacoco/index.html`.
+**Evidências da execução:** a suíte atual contém **84 testes, 0 falhas** (inclui rate limit, proteção contra spray de contas, acesso ADMIN ao Actuator e exposição Prometheus restrita ao perfil local `monitor`). O resumo e os cenários executados estão em [docs/evidencias/RESULTADO_TESTES.md](docs/evidencias/RESULTADO_TESTES.md); após o `verify`, os relatórios HTML ficam em `target/reports/surefire.html` e `target/site/jacoco/index.html`.
+
+### Monitoramento da Sprint 3
+
+O diretório [monitoring](monitoring/README.md) contém uma stack local reproduzível com a API, Prometheus e Grafana. O perfil `monitor` habilita `/actuator/prometheus`; fora dele, o endpoint permanece indisponível. O dashboard provisionado mostra disponibilidade, tráfego HTTP, respostas 401/403/429/5xx e latência p95. A stack publica portas somente em `127.0.0.1` e não representa um deploy de produção.
 
 ## 11. Arquitetura e estrutura do projeto
 
@@ -305,6 +318,6 @@ requests.http        Coleção de requisições prontas
 | Arquitetura da Solução (20%) | [docs/ARQUITETURA.md](docs/ARQUITETURA.md): diagramas de componentes, responsabilidades por camada, fluxos de comunicação e de autenticação |
 | Maturidade REST Nível 2 (20%) | Recursos por substantivo, verbos GET/POST/PUT/PATCH/DELETE, status 200/201/204/400/401/403/404/405/409/415, `Location`, PUT idempotente, negociação JSON/CSV ([seção 6 da arquitetura](docs/ARQUITETURA.md#6-maturidade-rest--nível-2-richardson)) |
 | Autenticação e Autorização (20%) | `SecurityConfig` + `@PreAuthorize`; endpoints públicos e protegidos; perfis ADMIN/ANALISTA; controle por dono da consulta |
-| Testes Automatizados (15%) | 80 testes (sucesso, erro e acesso não autorizado) · [evidências](docs/evidencias/RESULTADO_TESTES.md) |
+| Testes Automatizados (15%) | 84 testes (sucesso, erro e acesso não autorizado) · [evidências](docs/evidencias/RESULTADO_TESTES.md) |
 | JWT (15%) | `JwtService` (geração/validação HS256, emissor, expiração), `JwtAuthenticationFilter`, claims usadas na autorização e no `/auth/me` |
 | Documentação e Erros (10%) | Swagger/OpenAPI em `/swagger-ui.html`, Problem Details padronizado, este README |

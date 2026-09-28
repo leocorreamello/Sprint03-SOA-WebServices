@@ -3,6 +3,7 @@ package br.com.fiap.autointel.integration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -18,6 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /** Infraestrutura comum: contexto Spring completo (com Spring Security real) + MockMvc. */
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 abstract class ApiTestSupport {
 
     protected static final String ADMIN_EMAIL = "admin@autointel.com";

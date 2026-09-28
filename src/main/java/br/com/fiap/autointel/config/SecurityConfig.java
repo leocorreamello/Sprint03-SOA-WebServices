@@ -6,6 +6,7 @@ import br.com.fiap.autointel.security.RestAccessDeniedHandler;
 import br.com.fiap.autointel.security.RestAuthenticationEntryPoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
@@ -46,22 +47,28 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtService jwtService,
                                                    RestAuthenticationEntryPoint entryPoint,
-                                                   RestAccessDeniedHandler accessDeniedHandler) throws Exception {
+                                                   RestAccessDeniedHandler accessDeniedHandler,
+                                                   @Value("${app.monitor.enabled:false}") boolean monitorEnabled) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(h -> h.frameOptions(f -> f.sameOrigin())) // necessário para o console do H2
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(ROTAS_PUBLICAS).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/usuarios").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/atributos/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/veiculos/**").hasAnyRole("ADMIN", "ANALISTA")
-                        .requestMatchers("/api/v1/veiculos/**", "/api/v1/atributos/**", "/api/v1/usuarios/**")
-                        .hasRole("ADMIN")
-                        .requestMatchers("/api/v1/consultas/**").hasAnyRole("ADMIN", "ANALISTA")
-                        .anyRequest().authenticated())
+                .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(ROTAS_PUBLICAS).permitAll();
+                    if (monitorEnabled) {
+                        auth.requestMatchers("/actuator/prometheus").permitAll();
+                    }
+                    auth.requestMatchers("/actuator/metrics", "/actuator/metrics/**").hasRole("ADMIN")
+                            .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/usuarios").permitAll()
+                            .requestMatchers(HttpMethod.GET, "/api/v1/atributos/**").permitAll()
+                            .requestMatchers(HttpMethod.GET, "/api/v1/veiculos/**").hasAnyRole("ADMIN", "ANALISTA")
+                            .requestMatchers("/api/v1/veiculos/**", "/api/v1/atributos/**", "/api/v1/usuarios/**")
+                            .hasRole("ADMIN")
+                            .requestMatchers("/api/v1/consultas/**").hasAnyRole("ADMIN", "ANALISTA")
+                            .anyRequest().authenticated();
+                })
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint(entryPoint)
                         .accessDeniedHandler(accessDeniedHandler))

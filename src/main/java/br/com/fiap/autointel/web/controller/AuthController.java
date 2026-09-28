@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,8 +31,8 @@ public class AuthController {
     @ApiResponse(responseCode = "200", description = "Token emitido")
     @ApiResponse(responseCode = "400", description = "Campos inválidos")
     @ApiResponse(responseCode = "401", description = "Credenciais inválidas")
-    public TokenResponse login(@Valid @RequestBody LoginRequest request) {
-        return authService.login(request);
+    public TokenResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest servletRequest) {
+        return authService.login(request, servletRequest.getRemoteAddr());
     }
 
     @GetMapping("/me")
