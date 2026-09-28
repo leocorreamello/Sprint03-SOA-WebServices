@@ -24,7 +24,7 @@ jobs:
           cache: maven
       - name: Testes e cobertura
         run: ./mvnw --batch-mode verify
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: resultados-testes
